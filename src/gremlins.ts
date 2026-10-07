@@ -35,9 +35,34 @@ export class Gremlins {
         args.push(arg)
       }
     }
+    if (inputs?.workers && !args.some((a) => a.startsWith('--workers'))) {
+      args.push('--workers', inputs.workers)
+    }
     if (inputs?.workdir && inputs?.workdir !== '.') {
       core.info(`Using ${inputs?.workdir} as working directory`)
       execOptions.cwd = inputs?.workdir
+    }
+
+    // A mutant that makes a loop infinite while it allocates grows until the
+    // runner itself is killed, before gremlins' timeout fires, and the job
+    // ends with no result. Capping each process's address space makes that
+    // mutant fail its allocation instead, which gremlins counts as killed.
+    // ulimit -v is Linux's; elsewhere the cap is skipped.
+    const memoryMb = Number(inputs?.memoryMb ?? 0)
+    if (memoryMb > 0 && this.ctx.platform() === 'linux') {
+      core.info(`Capping each process at ${memoryMb} MiB`)
+      return await exec(
+        'bash',
+        [
+          '-c',
+          'ulimit -v "$1" && shift && exec "$@"',
+          'gremlins',
+          String(memoryMb * 1024),
+          bin,
+          ...args,
+        ],
+        execOptions
+      )
     }
 
     return await exec(bin, args, execOptions)

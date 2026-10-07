@@ -86,6 +86,9 @@ describe('platform', () => {
       version: 'test',
       args: 'test',
       workdir: 'test',
+      token: 'test',
+      workers: 'test',
+      memoryMb: 'test',
     })
   })
 })

@@ -16,7 +16,7 @@
 import * as httpm from '@actions/http-client'
 import { TypedResponse } from '@actions/http-client/lib/interfaces'
 import { describe } from '@jest/globals'
-import { anyString, instance, mock, reset, when } from 'ts-mockito'
+import { anyString, instance, mock, reset, verify, when } from 'ts-mockito'
 
 import { Version } from '../src/version'
 
@@ -55,19 +55,12 @@ describe('version', () => {
     expect(release).toEqual('v2.3.4')
   })
 
-  it('returns specific release', async () => {
-    const mockedResponse = response(200, SINGLE_RELEASE_RESPONSE)
-    when(
-      httpClientMock.getJson(
-        'https://api.github.com/repos/go-gremlins/gremlins/releases/tags/v2.3.4'
-      )
-    ).thenResolve(mockedResponse)
-
+  it('returns specific release without calling the API', async () => {
     const version = new Version('v2.3.4', instance(httpClientMock))
     const release = await version.get()
 
-    expect(release).not.toBeNull()
     expect(release).toEqual('v2.3.4')
+    verify(httpClientMock.getJson(anyString())).never()
   })
 
   it('returns max satisfying release, when range is specified', async () => {
@@ -86,17 +79,9 @@ describe('version', () => {
   })
 
   it('returns the raw release', async () => {
-    const mockedResponse = response(200, SINGLE_RELEASE_RESPONSE)
-    when(
-      httpClientMock.getJson(
-        'https://api.github.com/repos/go-gremlins/gremlins/releases/tags/v2.3.4'
-      )
-    ).thenResolve(mockedResponse)
-
     const version = new Version('v2.3.4', instance(httpClientMock))
     const release = await version.getRaw()
 
-    expect(release).not.toBeNull()
     expect(release).toEqual('2.3.4')
   })
 
@@ -124,24 +109,6 @@ describe('version', () => {
     const version = new Version('latest', instance(httpClientMock))
 
     await expect(version.get()).rejects.toThrow()
-  })
-
-  it('throws when specific release is not found', async () => {
-    const mockedResponse = response(404, [])
-    when(httpClientMock.getJson(anyString())).thenResolve(mockedResponse)
-
-    const version = new Version('v1.2.3', instance(httpClientMock))
-
-    await expect(version.get()).rejects.toThrow()
-  })
-
-  it('throws when specific release is not found', async () => {
-    const mockedResponse = response(404, [])
-    when(httpClientMock.getJson(anyString())).thenResolve(mockedResponse)
-
-    const version = new Version('v1.2.3', instance(httpClientMock))
-
-    await expect(version.getRaw()).rejects.toThrow()
   })
 
   it('throws when there are no releases (NOT FOUND)', async () => {

@@ -76,4 +76,66 @@ describe('gremlins', () => {
       cwd: 'test/dir',
     })
   })
+
+  it('passes workers through', async () => {
+    when(context.getInputs()).thenReturn({
+      workdir: undefined,
+      args: undefined,
+      version: '1.2.3',
+      workers: '2',
+    })
+
+    const gremlins = new Gremlins(instance(context), instance(artifact))
+
+    await gremlins.run()
+
+    expect(exec).toHaveBeenCalledWith(
+      'path/to/go',
+      ['unleash', '--workers', '2'],
+      {}
+    )
+  })
+
+  it('caps memory on linux', async () => {
+    when(context.getInputs()).thenReturn({
+      workdir: undefined,
+      args: undefined,
+      version: '1.2.3',
+      memoryMb: '6144',
+    })
+    when(context.platform()).thenReturn('linux')
+
+    const gremlins = new Gremlins(instance(context), instance(artifact))
+
+    await gremlins.run()
+
+    expect(exec).toHaveBeenCalledWith(
+      'bash',
+      [
+        '-c',
+        'ulimit -v "$1" && shift && exec "$@"',
+        'gremlins',
+        '6291456',
+        'path/to/go',
+        'unleash',
+      ],
+      {}
+    )
+  })
+
+  it('does not cap memory elsewhere', async () => {
+    when(context.getInputs()).thenReturn({
+      workdir: undefined,
+      args: undefined,
+      version: '1.2.3',
+      memoryMb: '6144',
+    })
+    when(context.platform()).thenReturn('darwin')
+
+    const gremlins = new Gremlins(instance(context), instance(artifact))
+
+    await gremlins.run()
+
+    expect(exec).toHaveBeenCalledWith('path/to/go', ['unleash'], {})
+  })
 })

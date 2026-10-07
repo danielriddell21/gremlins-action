@@ -28,7 +28,8 @@ export class Artifact {
 
   constructor(private context: Context, private v?: Version) {
     if (!v) {
-      this.version = new Version(context.getInputs().version)
+      const inputs = context.getInputs()
+      this.version = new Version(inputs.version, undefined, inputs.token)
     } else {
       this.version = v
     }

@@ -20,6 +20,9 @@ interface Inputs {
   version: string
   args: string | undefined
   workdir: string | undefined
+  token?: string
+  workers?: string
+  memoryMb?: string
 }
 
 export class Context {
@@ -66,10 +69,13 @@ export class Context {
     const version: string = core.getInput('version')
     const args: string = core.getInput('args')
     const workdir: string = core.getInput('workdir')
+    const token: string = core.getInput('token')
+    const workers: string = core.getInput('workers')
+    const memoryMb: string = core.getInput('memory-mb')
     core.debug(`Received version ${version}.`)
     core.debug(`Received flags ${args}.`)
     core.debug(`Received workdir ${workdir}`)
 
-    return { version, args, workdir }
+    return { version, args, workdir, token, workers, memoryMb }
   }
 }

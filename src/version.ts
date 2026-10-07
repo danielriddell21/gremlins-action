@@ -32,9 +32,20 @@ export class Version {
   // wantVer or a parametrized wantVer. Please, refer to semver documentation
   // for the range syntax:
   // https://github.com/npm/node-semver#advanced-range-syntax
-  constructor(private wantVer: string, private client?: httpm.HttpClient) {
+  constructor(
+    private wantVer: string,
+    private client?: httpm.HttpClient,
+    token?: string
+  ) {
     if (!client) {
-      this.httpClient = new httpm.HttpClient(USER_AGENT)
+      // Unauthenticated, the releases API allows 60 requests an hour per IP,
+      // which a shared runner pool exhausts; a token raises it to the
+      // token's own limit.
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      this.httpClient = new httpm.HttpClient(USER_AGENT, [], { headers })
     } else {
       this.httpClient = client
     }
@@ -62,13 +73,9 @@ export class Version {
       return await this.resolveVersion(version)
     }
 
-    const url = `${RELEASES_URL}/tags/${version}`
-    const res = await this.httpClient.getJson<GitHubRelease>(url)
-    if (!res?.result || res?.statusCode < 200 || res?.statusCode >= 300) {
-      throw Error(`Cannot find Gremlins release ${version}`)
-    }
-
-    return res?.result?.tag_name
+    // An exact version names its download URL already, so there is nothing
+    // to ask the API: a release that does not exist fails at the download.
+    return `v${semver.clean(version)}`
   }
 
   private async resolveVersion(version: string): Promise<string> {
