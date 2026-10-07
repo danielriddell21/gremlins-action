@@ -24,8 +24,10 @@ inputs:
   memory-mb:
     required: false
     description: >-
-      Address-space cap per process, in MiB, on Linux runners. Times workers,
-      it has to fit in the runner's memory. 0 disables it.
+      Memory limit for the whole run, in MiB, on Linux runners: gremlins runs
+      in a cgroup capped at this, so a runaway mutant's test is killed rather
+      than the runner. Needs passwordless sudo and systemd, as GitHub's hosted
+      Linux runners have. 0 disables it.
     default: '0'
 runs:
   using: 'node24'

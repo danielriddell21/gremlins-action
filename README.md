@@ -4,7 +4,7 @@ The official [GitHub Action](https://github.com/features/actions)
 for [Gremlins](https://github.com/go-gremlins/gremlins).
 
 This fork adds `token`, so resolving `latest` does not hit the unauthenticated
-API rate limit (an exact version makes no API call at all), and `memory-mb`, so a
+API rate limit (an exact version makes no API call at all), and `memory-mb`, a cgroup limit, so a
 mutant that allocates without bound fails as killed instead of taking the runner
 down.
 
@@ -45,7 +45,7 @@ jobs:
 | `workdir`      | `string` | `.`      | Working directory relative to repository root            |  
 | `token`        | `string` | `github.token` | Token for the releases API; only used for `latest` or a range |
 | `workers`      | `string` |          | Mutants tested in parallel                               |
-| `memory-mb`    | `string` | `0`      | Per-process memory cap in MiB on Linux; `0` disables it  |
+| `memory-mb`    | `string` | `0`      | Memory limit in MiB for the whole run, as a cgroup, on Linux; `0` disables it |
 
 > **¹** Can be `latest`, a fixed version like `v0.1.2` or a semver range like `~0.2`. In this case this
 > will return `v0.2.2`.

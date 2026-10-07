@@ -280,7 +280,7 @@ class Gremlins {
         this.artifact = artifact;
     }
     run() {
-        var _a;
+        var _a, _b, _c, _d, _e, _f;
         return __awaiter(this, void 0, void 0, function* () {
             const bin = yield this.artifact.getExePath();
             const inputs = this.ctx.getInputs();
@@ -301,17 +301,29 @@ class Gremlins {
             }
             // A mutant that makes a loop infinite while it allocates grows until the
             // runner itself is killed, before gremlins' timeout fires, and the job
-            // ends with no result. Capping each process's address space makes that
-            // mutant fail its allocation instead, which gremlins counts as killed.
-            // ulimit -v is Linux's; elsewhere the cap is skipped.
+            // ends with no result. Running gremlins in a memory-limited cgroup makes
+            // the kernel kill the largest process inside it instead — that mutant's
+            // test binary — which gremlins counts as killed. A cgroup limit counts
+            // memory actually used, so runtimes that reserve large address spaces
+            // (a WebAssembly engine, say) are unaffected. Linux runners only.
             const memoryMb = Number((_a = inputs === null || inputs === void 0 ? void 0 : inputs.memoryMb) !== null && _a !== void 0 ? _a : 0);
             if (memoryMb > 0 && this.ctx.platform() === 'linux') {
-                core.info(`Capping each process at ${memoryMb} MiB`);
-                return yield (0, exec_1.exec)('bash', [
-                    '-c',
-                    'ulimit -v "$1" && shift && exec "$@"',
-                    'gremlins',
-                    String(memoryMb * 1024),
+                core.info(`Limiting gremlins to ${memoryMb} MiB`);
+                return yield (0, exec_1.exec)('sudo', [
+                    '-n',
+                    '-E',
+                    'env',
+                    `PATH=${(_b = process.env.PATH) !== null && _b !== void 0 ? _b : ''}`,
+                    'systemd-run',
+                    '--scope',
+                    '--quiet',
+                    '-p',
+                    `MemoryMax=${memoryMb}M`,
+                    '-p',
+                    'MemorySwapMax=0',
+                    `--uid=${(_d = (_c = process.getuid) === null || _c === void 0 ? void 0 : _c.call(process)) !== null && _d !== void 0 ? _d : 0}`,
+                    `--gid=${(_f = (_e = process.getgid) === null || _e === void 0 ? void 0 : _e.call(process)) !== null && _f !== void 0 ? _f : 0}`,
+                    '--',
                     bin,
                     ...args,
                 ], execOptions);

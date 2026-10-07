@@ -101,7 +101,7 @@ describe('gremlins', () => {
       workdir: undefined,
       args: undefined,
       version: '1.2.3',
-      memoryMb: '6144',
+      memoryMb: '12288',
     })
     when(context.platform()).thenReturn('linux')
 
@@ -109,18 +109,11 @@ describe('gremlins', () => {
 
     await gremlins.run()
 
-    expect(exec).toHaveBeenCalledWith(
-      'bash',
-      [
-        '-c',
-        'ulimit -v "$1" && shift && exec "$@"',
-        'gremlins',
-        '6291456',
-        'path/to/go',
-        'unleash',
-      ],
-      {}
-    )
+    const [cmd, args] = (exec as jest.Mock).mock.calls.at(-1)
+    expect(cmd).toEqual('sudo')
+    expect(args).toContain('systemd-run')
+    expect(args).toContain('MemoryMax=12288M')
+    expect(args.slice(-3)).toEqual(['--', 'path/to/go', 'unleash'])
   })
 
   it('does not cap memory elsewhere', async () => {

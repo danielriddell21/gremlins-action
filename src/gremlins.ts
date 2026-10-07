@@ -45,19 +45,31 @@ export class Gremlins {
 
     // A mutant that makes a loop infinite while it allocates grows until the
     // runner itself is killed, before gremlins' timeout fires, and the job
-    // ends with no result. Capping each process's address space makes that
-    // mutant fail its allocation instead, which gremlins counts as killed.
-    // ulimit -v is Linux's; elsewhere the cap is skipped.
+    // ends with no result. Running gremlins in a memory-limited cgroup makes
+    // the kernel kill the largest process inside it instead — that mutant's
+    // test binary — which gremlins counts as killed. A cgroup limit counts
+    // memory actually used, so runtimes that reserve large address spaces
+    // (a WebAssembly engine, say) are unaffected. Linux runners only.
     const memoryMb = Number(inputs?.memoryMb ?? 0)
     if (memoryMb > 0 && this.ctx.platform() === 'linux') {
-      core.info(`Capping each process at ${memoryMb} MiB`)
+      core.info(`Limiting gremlins to ${memoryMb} MiB`)
       return await exec(
-        'bash',
+        'sudo',
         [
-          '-c',
-          'ulimit -v "$1" && shift && exec "$@"',
-          'gremlins',
-          String(memoryMb * 1024),
+          '-n',
+          '-E',
+          'env',
+          `PATH=${process.env.PATH ?? ''}`,
+          'systemd-run',
+          '--scope',
+          '--quiet',
+          '-p',
+          `MemoryMax=${memoryMb}M`,
+          '-p',
+          'MemorySwapMax=0',
+          `--uid=${process.getuid?.() ?? 0}`,
+          `--gid=${process.getgid?.() ?? 0}`,
+          '--',
           bin,
           ...args,
         ],
