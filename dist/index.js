@@ -321,6 +321,10 @@ class Gremlins {
                     `MemoryMax=${memoryMb}M`,
                     '-p',
                     'MemorySwapMax=0',
+                    // systemd stops a whole unit when one of its processes is OOM
+                    // killed; continue keeps gremlins running past the mutant it lost.
+                    '-p',
+                    'OOMPolicy=continue',
                     `--uid=${(_d = (_c = process.getuid) === null || _c === void 0 ? void 0 : _c.call(process)) !== null && _d !== void 0 ? _d : 0}`,
                     `--gid=${(_f = (_e = process.getgid) === null || _e === void 0 ? void 0 : _e.call(process)) !== null && _f !== void 0 ? _f : 0}`,
                     '--',

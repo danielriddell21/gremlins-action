@@ -113,6 +113,7 @@ describe('gremlins', () => {
     expect(cmd).toEqual('sudo')
     expect(args).toContain('systemd-run')
     expect(args).toContain('MemoryMax=12288M')
+    expect(args).toContain('OOMPolicy=continue')
     expect(args.slice(-3)).toEqual(['--', 'path/to/go', 'unleash'])
   })
 

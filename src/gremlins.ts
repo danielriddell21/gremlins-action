@@ -67,6 +67,10 @@ export class Gremlins {
           `MemoryMax=${memoryMb}M`,
           '-p',
           'MemorySwapMax=0',
+          // systemd stops a whole unit when one of its processes is OOM
+          // killed; continue keeps gremlins running past the mutant it lost.
+          '-p',
+          'OOMPolicy=continue',
           `--uid=${process.getuid?.() ?? 0}`,
           `--gid=${process.getgid?.() ?? 0}`,
           '--',
