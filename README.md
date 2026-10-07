@@ -3,6 +3,11 @@
 The official [GitHub Action](https://github.com/features/actions)
 for [Gremlins](https://github.com/go-gremlins/gremlins).
 
+This fork adds `token`, so resolving `latest` does not hit the unauthenticated
+API rate limit (an exact version makes no API call at all), and `memory-mb`, so a
+mutant that allocates without bound fails as killed instead of taking the runner
+down.
+
 [![GitHub release (latest by semver)](https://img.shields.io/github/v/release/go-gremlins/gremlins-action?logo=github)](https://github.com/go-gremlins/gremlins-action/releases/latest)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/go-gremlins/gremlins-action/build-test?logo=github)](https://github.com/go-gremlins/gremlins-action/actions/workflows/test.yml)
 [![Codecov](https://img.shields.io/codecov/c/github/go-gremlins/gremlins-action?logo=codecov)](https://codecov.io/gh/go-gremlins/gremlins-action)
@@ -38,6 +43,9 @@ jobs:
 | `version`**¹** | `string` | `latest` | Te version of Gremlins to use                            | 
 | `args`         | `string` |          | The command line arguments to pass to `gremlins unleash` |
 | `workdir`      | `string` | `.`      | Working directory relative to repository root            |  
+| `token`        | `string` | `github.token` | Token for the releases API; only used for `latest` or a range |
+| `workers`      | `string` |          | Mutants tested in parallel                               |
+| `memory-mb`    | `string` | `0`      | Per-process memory cap in MiB on Linux; `0` disables it  |
 
 > **¹** Can be `latest`, a fixed version like `v0.1.2` or a semver range like `~0.2`. In this case this
 > will return `v0.2.2`.
